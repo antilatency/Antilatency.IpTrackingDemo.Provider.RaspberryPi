@@ -1,0 +1,3 @@
+[submodule "AntilatencyRaspberryPiSdkCpp"]
+	path = AntilatencyRaspberryPiSdkCpp
+	url = https://github.com/antilatency/Antilatency.RaspberryPiSdk.Cpp
