@@ -33,7 +33,6 @@ struct TrackingNode {
     Antilatency::DeviceNetwork::NodeHandle node = Antilatency::DeviceNetwork::NodeHandle::Null;
     Antilatency::Alt::Tracking::ITrackingCotask trackingCotask = nullptr;
     Antilatency::IpNetwork::RawString32 tag{};
-    Antilatency::IpNetwork::ErrorType error = Antilatency::IpNetwork::ErrorType::None;
 };
 }
 
@@ -82,7 +81,9 @@ int main(int argc, char *argv[]) {
     ainLibrary = Antilatency::InterfaceContract::getLibraryInterface
             <Antilatency::IpNetwork::ILibrary>(ANTILATENCY_IP_NETWORK_LIB);
     if (ainLibrary == nullptr) {
-        printError("Failed to load  Antilatency::IpNetwork::ILibrary", true);
+        printError(std::string("Failed to load  Antilatency::IpNetwork::ILibrary")
+                       + std::string(ANTILATENCY_IP_NETWORK_LIB),
+                   true);
         return 1;
     }
     auto id = getInterfaceMacAddress("wlan0");
@@ -113,16 +114,16 @@ int main(int argc, char *argv[]) {
         altTrackingLibrary = Antilatency::InterfaceContract::getLibraryInterface
                 <Antilatency::Alt::Tracking::ILibrary>(ALT_TRACKING_LIBRARY);
         if (altTrackingLibrary == nullptr) {
-            netServer.sendStateMessages({}, {}, Antilatency::enumToString(ErrorType::AltTrackingLibraryLoad));
             printError(Antilatency::enumToString(ErrorType::AltTrackingLibraryLoad), true);
+            netServer.sendStateMessages({}, {}, Antilatency::enumToString(ErrorType::AltTrackingLibraryLoad));
             return 1;
         }
 
         cotaskConstructor = altTrackingLibrary.createTrackingCotaskConstructor();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (cotaskConstructor == nullptr) {
-            netServer.sendStateMessages({} , {}, Antilatency::enumToString(ErrorType::TrakingCotaskConstructFailed));
             printError(Antilatency::enumToString(ErrorType::TrakingCotaskConstructFailed), true);
+            netServer.sendStateMessages({} , {}, Antilatency::enumToString(ErrorType::TrakingCotaskConstructFailed));
             return 1;
         }
     } catch (const std::exception &ex) {
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
     try {
         netServer.startCommandListening();
     } catch (const std::exception &ex) {
-        printError(ex.what());
+        printError(ex.what(), params.verbose);
         netServer.sendStateMessages({} , {}, ex.what());
     }
 
@@ -166,11 +167,12 @@ int main(int argc, char *argv[]) {
             }
         } catch (const std::exception &ex) {
             try {
+
                 netServer.sendStateMessages({}, {}, ex.what());
             } catch (const std::exception &ex) {
-                printError(ex.what());
+                printError(ex.what(), params.verbose);
             }
-            printError(ex.what());
+            printError(ex.what(), params.verbose);
             continue;
         }
 
@@ -199,9 +201,10 @@ int main(int argc, char *argv[]) {
                         Antilatency::enumToString(ErrorType::AltEnvironmentArbitrary2D)
                         );
                 } catch (const std::exception &ex) {
-                    printError(ex.what());
+                    printError(ex.what(), params.verbose);
                 }
-                printError(Antilatency::enumToString(ErrorType::AltEnvironmentArbitrary2D));
+                printError(Antilatency::enumToString(ErrorType::AltEnvironmentArbitrary2D),
+                           params.verbose);
                 continue;
             }
 
@@ -220,9 +223,10 @@ int main(int argc, char *argv[]) {
                         Antilatency::enumToString(ErrorType::TrackingNodeNotFound)
                         );
                 } catch (const std::exception &ex) {
-                    printError(ex.what());
+                    printError(ex.what(), params.verbose);
                 }
-                printError(Antilatency::enumToString(ErrorType::TrackingNodeNotFound), true);
+                printError(Antilatency::enumToString(ErrorType::TrackingNodeNotFound),
+                           params.verbose);
                 continue;
             }
 
@@ -237,19 +241,18 @@ int main(int argc, char *argv[]) {
                         try {
                             tag = deviceNetwork.nodeGetStringProperty(parent, "Tag");
                         } catch (const std::exception &ex) {
-                            trackingNode.error = ErrorType::ReadTagProperty;
-                            printError(ex.what(), true);
+                            printError(ex.what(), params.verbose);
                         }
 
                         if (true == tag.empty()) {
                             try {
                                 tag = deviceNetwork.nodeGetStringProperty(
                                           parent,
-                                          Antilatency::DeviceNetwork::Interop::Constants::HardwareSerialNumberKey
+                                          Antilatency::DeviceNetwork::Interop
+                                              ::Constants::HardwareSerialNumberKey
                                           );
                             } catch (const std::exception &ex) {
-                                trackingNode.error = ErrorType::ReadSerialNumber;
-                                printError(ex.what(), true);
+                                printError(ex.what(), params.verbose);
                             }
                         }
 
@@ -259,8 +262,7 @@ int main(int argc, char *argv[]) {
                             trackingNode.trackingCotask =
                                 cotaskConstructor.startTask(deviceNetwork, node, environment);
                         } catch (const std::exception &ex) {
-                            trackingNode.error = ErrorType::StartTrackingTaskFailed;
-                            printError(ex.what(), true);
+                            printError(ex.what(), params.verbose);
                         }
 
                         trackingNodes.push_back(trackingNode);
@@ -276,13 +278,15 @@ int main(int argc, char *argv[]) {
         for (TrackingNode trackingNode : trackingNodes) {
             StateMessage poseSample{};
 
+            poseSample.trackerError = ErrorType::None;
+
             if (trackingNode.trackingCotask == nullptr) {
                 poseSample.trackerError = ErrorType::TrakingCotaskConstructFailed;
                 printError(
                     std::to_string(static_cast<uint32_t>(trackingNode.node))
                         + ": "
                         + Antilatency::enumToString(ErrorType::TrakingCotaskConstructFailed),
-                    true
+                    params.verbose
                     );
 
                 continue;
@@ -294,7 +298,7 @@ int main(int argc, char *argv[]) {
                     std::to_string(static_cast<uint32_t>(trackingNode.node))
                         + ": "
                         + Antilatency::enumToString(ErrorType::TrackingTaskRestartMessage),
-                    true
+                    params.verbose
                     );
                 trackingNode.trackingCotask = cotaskConstructor.startTask(deviceNetwork, trackingNode.node, environment);
                 continue;
@@ -313,7 +317,7 @@ int main(int argc, char *argv[]) {
                 poseSample.rotationZ = state.pose.rotation.z;
                 poseSample.rotationW = state.pose.rotation.w;
             } catch(const std::exception &) {
-                trackingNode.error = ErrorType::GetTrackerStateFailed;
+                poseSample.trackerError = ErrorType::GetTrackerStateFailed;
             }
 
             poseSample.rawTag = trackingNode.tag;
@@ -328,10 +332,37 @@ int main(int argc, char *argv[]) {
         if (0 != setupGpio) {
             deviceError += Antilatency::enumToString(ErrorType::SetupGpio) + std::string(" ");
         }
+
+        if (true == params.verbose) {
+            std::stringstream output{};
+            output << "id: " << params.identifier
+                   << "; c_time: " << ainLibrary.getCurrentTime()
+                   << "; error: " << deviceError
+                   << "; gpio: ";
+            for (auto pin : gpioState) {
+                output << pin.value;
+            }
+            for (auto const &pose : poses) {
+                output << "\n\t"
+                       << "tag: " << ainLibrary.getTagFromRawTag(pose.rawTag)
+                       << "; err: "  << Antilatency::enumToString(pose.trackerError)
+                       << "; posX: " << pose.positionX
+                       << "; posY: " << pose.positionY
+                       << "; posZ: " << pose.positionZ
+                       << "; rotX: " << pose.rotationX
+                       << "; rotY: " << pose.rotationY
+                       << "; rotZ: " << pose.rotationZ
+                       << "; rotW: " << pose.rotationW;
+            }
+            output << "\n";
+            std::cout << output.str();
+            std::flush(std::cout);
+        }
+
         try {
             netServer.sendStateMessages(poses, gpioState, deviceError);
         } catch (const std::exception &ex) {
-            printError(ex.what());
+            printError(ex.what(), params.verbose);
         }
     }
 
