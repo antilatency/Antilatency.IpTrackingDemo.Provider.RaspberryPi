@@ -1,3 +1,6 @@
 [submodule "AntilatencyRaspberryPiSdkCpp"]
 	path = AntilatencyRaspberryPiSdkCpp
 	url = https://github.com/antilatency/Antilatency.RaspberryPiSdk.Cpp
+[submodule "cxxopts"]
+	path = cxxopts
+	url = https://github.com/jarro2783/cxxopts
