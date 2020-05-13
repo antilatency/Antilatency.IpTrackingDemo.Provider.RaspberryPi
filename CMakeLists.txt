@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(AntilatencyIpTrackingDemoProvider VERSION 0.1.0 LANGUAGES CXX)
+project(AntilatencyIpTrackingDemoProvider VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
@@ -18,6 +18,12 @@ target_compile_features(
         PRIVATE
             cxx_std_17
     )
+
+target_compile_options(
+    AntilatencyIpTrackingDemoProvider
+        PRIVATE
+            $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic-errors>
+)
 
 target_include_directories(
     AntilatencyIpTrackingDemoProvider
@@ -58,7 +64,11 @@ target_link_libraries(
             wiringPi
     )
 
-install(
-    TARGETS AntilatencyIpTrackingDemoProvider
-    DESTINATION bin
-    )
+# Deployment rules for QtCreator
+macro(add_deployment_file SRC DEST)
+    file(RELATIVE_PATH path ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    file(APPEND "${CMAKE_SOURCE_DIR}/QtCreatorDeployment.txt" "${path}/${SRC}:${DEST}\n")
+endmacro()
+
+file(WRITE "${CMAKE_SOURCE_DIR}/QtCreatorDeployment.txt" "${CMAKE_INSTALL_PREFIX}\n")
+add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" bin)

@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
             <Antilatency::IpNetwork::ILibrary>(ANTILATENCY_IP_NETWORK_LIB);
     if (ainLibrary == nullptr) {
         printError(std::string("Failed to load  Antilatency::IpNetwork::ILibrary")
-                       + std::string(ANTILATENCY_IP_NETWORK_LIB),
+                       +" " + std::string(ANTILATENCY_IP_NETWORK_LIB),
                    true);
         return 1;
     }
