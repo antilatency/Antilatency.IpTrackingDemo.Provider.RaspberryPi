@@ -64,6 +64,14 @@ target_link_libraries(
             wiringPi
     )
 
+set(SDK_PATH "https://github.com/antilatency/Antilatency.RaspberryPiSdk.Cpp/releases/download/0.1.0/")
+set (AIP_LIB "libAntilatencyIpNetwork.so")
+set (ADN_LIB "libAntilatencyDeviceNetwork.so")
+set (ALT_TRACKING_LIB "libAntilatencyAltTracking.so")
+file(DOWNLOAD "${SDK_PATH}${AIP_LIB}" "./${AIP_LIB}")
+file(DOWNLOAD "${SDK_PATH}${ADN_LIB}" "./${ADN_LIB}")
+file(DOWNLOAD "${SDK_PATH}${ALT_TRACKING_LIB}" "./${ALT_TRACKING_LIB}")
+
 # Deployment rules for QtCreator
 macro(add_deployment_file SRC DEST)
     file(RELATIVE_PATH path ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
@@ -72,3 +80,6 @@ endmacro()
 
 file(WRITE "${CMAKE_SOURCE_DIR}/QtCreatorDeployment.txt" "${CMAKE_INSTALL_PREFIX}\n")
 add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" bin)
+add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${AIP_LIB}" lib)
+add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${ADN_LIB}" lib)
+add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${ALT_TRACKING_LIB}" lib)
