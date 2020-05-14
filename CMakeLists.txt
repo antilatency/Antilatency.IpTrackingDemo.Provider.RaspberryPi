@@ -11,66 +11,75 @@ endif()
 
 find_package(Threads REQUIRED)
 
-add_executable(AntilatencyIpTrackingDemoProvider Src/Main.cpp)
+add_executable(${PROJECT_NAME} Src/Main.cpp)
 
 target_compile_features(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
         PRIVATE
             cxx_std_17
-    )
+)
 
 target_compile_options(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
         PRIVATE
             $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic-errors>
 )
 
 target_include_directories(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/AntilatencyRaspberryPiSdkCpp/include
         ${CMAKE_CURRENT_SOURCE_DIR}/cxxopts/include
         ${CMAKE_CURRENT_SOURCE_DIR}/Src
-    )
+)
 
 target_compile_definitions(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
     PRIVATE
         ANTILATENCY_PACKAGE_DIR=\"${CMAKE_INSTALL_PREFIX}\"
-    )
+)
 
 if(CMAKE_DL_LIBS)
     target_link_libraries(
-        AntilatencyIpTrackingDemoProvider
+        ${PROJECT_NAME}
             PRIVATE
                 ${CMAKE_DL_LIBS}
     )
 endif()
 
 target_link_libraries(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
         PRIVATE
             Threads::Threads
-    )
+)
 
 add_library(wiringPi SHARED IMPORTED)
 set_property(
     TARGET wiringPi
     PROPERTY IMPORTED_LOCATION "${CMAKE_SYSROOT}/usr/lib/libwiringPi.so"
-    )
+)
 target_link_libraries(
-    AntilatencyIpTrackingDemoProvider
+    ${PROJECT_NAME}
         PRIVATE
             wiringPi
-    )
+)
 
 set(SDK_PATH "https://github.com/antilatency/Antilatency.RaspberryPiSdk.Cpp/releases/download/0.1.0/")
-set (AIP_LIB "libAntilatencyIpNetwork.so")
-set (ADN_LIB "libAntilatencyDeviceNetwork.so")
-set (ALT_TRACKING_LIB "libAntilatencyAltTracking.so")
-file(DOWNLOAD "${SDK_PATH}${AIP_LIB}" "./${AIP_LIB}")
-file(DOWNLOAD "${SDK_PATH}${ADN_LIB}" "./${ADN_LIB}")
-file(DOWNLOAD "${SDK_PATH}${ALT_TRACKING_LIB}" "./${ALT_TRACKING_LIB}")
+set(AIP_LIB "libAntilatencyIpNetwork.so")
+set(ADN_LIB "libAntilatencyDeviceNetwork.so")
+set(ALT_TRACKING_LIB "libAntilatencyAltTracking.so")
+
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/download.cmake "file(DOWNLOAD \"${SDK_PATH}${AIP_LIB}\" \"./${AIP_LIB}\")\n")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/download.cmake "file(DOWNLOAD \"${SDK_PATH}${ADN_LIB}\" \"./${ADN_LIB}\")\n")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/download.cmake "file(DOWNLOAD \"${SDK_PATH}${ALT_TRACKING_LIB}\" \"./${ALT_TRACKING_LIB}\")\n")
+
+add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/download.cmake
+    COMMENT "Downloading SDK binaries"
+    VERBATIM
+)
 
 # Deployment rules for QtCreator
 macro(add_deployment_file SRC DEST)
