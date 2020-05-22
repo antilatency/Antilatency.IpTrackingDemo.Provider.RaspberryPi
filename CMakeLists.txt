@@ -92,3 +92,16 @@ add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" bin)
 add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${AIP_LIB}" lib)
 add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${ADN_LIB}" lib)
 add_deployment_file("${CMAKE_CURRENT_BINARY_DIR}/${ALT_TRACKING_LIB}" lib)
+
+install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION bin
+)
+
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${AIP_LIB}
+        ${CMAKE_CURRENT_BINARY_DIR}/${ADN_LIB}
+        ${CMAKE_CURRENT_BINARY_DIR}/${ALT_TRACKING_LIB}
+    DESTINATION lib
+)
