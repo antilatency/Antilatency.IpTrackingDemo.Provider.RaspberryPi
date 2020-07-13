@@ -196,6 +196,8 @@ int main(int argc, char *argv[]) {
             try {
                 environment = altTrackingLibrary.createEnvironment(params.environmentCode);
 
+                prevUpdateId--;
+
                 if (environment == nullptr) {
                     printError("Could not create environment: " + params.environmentCode, params.verbose);
                     netServer.sendStateMessages({}, {}, "Could not create environment: " + params.environmentCode);
@@ -276,6 +278,9 @@ int main(int argc, char *argv[]) {
                         try {
                             trackingNode.trackingCotask =
                                 cotaskConstructor.startTask(deviceNetwork, node, environment);
+
+                            printMessage("Started tracking task", params.verbose);
+                            netServer.sendStateMessages({}, {}, "Started tracking task");
                         } catch (const std::exception &ex) {
                             printError(ex.what(), params.verbose);
                         }
