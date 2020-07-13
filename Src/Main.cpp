@@ -164,10 +164,12 @@ int main(int argc, char *argv[]) {
                 } else if (command.key() == CommandKey::SetSendingRate) {
                     params.waitTime = std::stoi(command.value());
                 }
+
+                printMessage(Antilatency::enumToString(command.key()), params.verbose);
+                netServer.sendStateMessages({} , {}, Antilatency::enumToString(command.key()));
             }
         } catch (const std::exception &ex) {
             try {
-
                 netServer.sendStateMessages({}, {}, ex.what());
             } catch (const std::exception &ex) {
                 printError(ex.what(), params.verbose);
@@ -193,6 +195,12 @@ int main(int argc, char *argv[]) {
         if (prevEnvCode != params.environmentCode) {
             try {
                 environment = altTrackingLibrary.createEnvironment(params.environmentCode);
+
+                if (environment == nullptr) {
+                    printError("Could not create environment: " + params.environmentCode, params.verbose);
+                    netServer.sendStateMessages({}, {}, "Could not create environment: " + params.environmentCode);
+                    continue;
+                }
             } catch (const std::exception &) {
                 try {
                     netServer.sendStateMessages(
@@ -209,6 +217,13 @@ int main(int argc, char *argv[]) {
             }
 
             prevEnvCode = params.environmentCode;
+
+            printMessage("New environment: "+params.environmentCode, params.verbose);
+            try {
+                netServer.sendStateMessages({}, {}, "New environment: "+params.environmentCode);
+            } catch (const std::exception &ex) {
+                printError(ex.what(), params.verbose);
+            }
         }
 
         if (prevUpdateId != deviceNetwork.getUpdateId()) {
